@@ -1,0 +1,40 @@
+server:
+  port: 8123
+  servlet:
+    context-path: /api # 项目接口总路径
+spring:
+  application:
+    name: blame-picture
+  #数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: https://localhost:3306/blame_picture?useUnicode=true&characterEncoding=utf-8
+    username: root
+    password: root
+
+# Mybatis配置
+mybatis-plus:
+  configuration:
+    # 字段下划线转驼峰 - 关闭
+    map-underscore-to-camel-case: false
+    # 仅在开发环境中打印日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 逻辑删除配置
+      logic-delete-field: isDeleted # 全局逻辑删除字段名
+      logic-delete-value: 1 # 逻辑删除字段值（默认为 1）
+      logic-not-delete-value: 0 # 逻辑未删除字段值（默认为 0）
+
+# knife4j 接口文档配置
+knife4j:
+  enable: true
+  openapi:
+    title: 接口文档
+    version: 1.0
+    group:
+      test1:
+        group-name: 默认分组
+        api-rule: package
+        api-rule-resources:
+          - com.junjie.blamepicturebackend.controller
