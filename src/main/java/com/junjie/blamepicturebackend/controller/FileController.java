@@ -1,23 +1,23 @@
-package com.junjie.blamepicturebackend.controller;
+package com.yupi.yupicturebackend.controller;
 
 import com.junjie.blamepicturebackend.annotation.AuthCheck;
 import com.junjie.blamepicturebackend.common.BaseResponse;
 import com.junjie.blamepicturebackend.common.ResultUtils;
 import com.junjie.blamepicturebackend.constant.UserConstant;
-import com.junjie.blamepicturebackend.model.dto.picture.PictureUploadRequest;
-import com.junjie.blamepicturebackend.model.entity.User;
-import com.junjie.blamepicturebackend.model.vo.PictureVO;
-import com.junjie.blamepicturebackend.service.PictureService;
-import com.junjie.blamepicturebackend.service.UserService;
+import com.junjie.blamepicturebackend.exception.BusinessException;
+import com.junjie.blamepicturebackend.exception.ErrorCode;
+import com.junjie.blamepicturebackend.manager.CosManager;
+import com.qcloud.cos.model.COSObject;
+import com.qcloud.cos.model.COSObjectInputStream;
+import com.qcloud.cos.utils.IOUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 
 @Slf4j
 @RestController
@@ -25,26 +25,73 @@ import javax.servlet.http.HttpServletRequest;
 public class FileController {
 
     @Resource
-    private UserService userService;
-
-    @Resource
-    private PictureService pictureService;
+    private CosManager cosManager;
 
     /**
-     * 上传图片（可重新上传）
+     * 测试文件上传
+     *
+     * @param multipartFile
+     * @return
      */
-    @PostMapping("/upload")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<PictureVO> uploadPicture(
-            @RequestPart("file") MultipartFile multipartFile,
-            PictureUploadRequest pictureUploadRequest,
-            HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
-        PictureVO pictureVO = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
-        return ResultUtils.success(pictureVO);
+    @PostMapping("/test/upload")
+    public BaseResponse<String> testUploadFile(@RequestPart("file") MultipartFile multipartFile) {
+        // 文件目录
+        String filename = multipartFile.getOriginalFilename();
+        String filepath = String.format("/test/%s", filename);
+        File file = null;
+        try {
+            // 上传文件
+            file = File.createTempFile(filepath, null);
+            multipartFile.transferTo(file);
+            cosManager.putObject(filepath, file);
+            // 返回可访问的地址
+            return ResultUtils.success(filepath);
+        } catch (Exception e) {
+            log.error("file upload error, filepath = " + filepath, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
+        } finally {
+            if (file != null) {
+                // 删除临时文件
+                boolean delete = file.delete();
+                if (!delete) {
+                    log.error("file delete error, filepath = {}", filepath);
+                }
+            }
+        }
     }
 
+    /**
+     * 测试文件下载
+     *
+     * @param filepath 文件路径
+     * @param response 响应对象
+     */
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @GetMapping("/test/download/")
+    public void testDownloadFile(String filepath, HttpServletResponse response) throws IOException {
+        COSObjectInputStream cosObjectInput = null;
+        try {
+            COSObject cosObject = cosManager.getObject(filepath);
+            cosObjectInput = cosObject.getObjectContent();
+            byte[] bytes = IOUtils.toByteArray(cosObjectInput);
+            // 设置响应头
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment; filename=" + filepath);
+            // 写入响应
+            response.getOutputStream().write(bytes);
+            response.getOutputStream().flush();
+        } catch (Exception e) {
+            log.error("file download error, filepath = " + filepath, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "下载失败");
+        } finally {
+            // 释放流
+            if (cosObjectInput != null) {
+                cosObjectInput.close();
+            }
+        }
 
+    }
 }
 
 
