@@ -67,7 +67,11 @@ public class FileManager {
             double picScale = NumberUtil.round(picWidth * 1.0 / picHeight, 2).doubleValue();
             // 封装返回结果
             UploadPictureResult uploadPictureResult = new UploadPictureResult();
-            uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+            String host = cosClientConfig.getHost();
+            if (!host.startsWith("http://") && !host.startsWith("https://")) {
+                host = "https://" + host;
+            }
+            uploadPictureResult.setUrl(host + "/" + uploadPath);
             uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
             uploadPictureResult.setPicSize(FileUtil.size(file));
             uploadPictureResult.setPicWidth(picWidth);
