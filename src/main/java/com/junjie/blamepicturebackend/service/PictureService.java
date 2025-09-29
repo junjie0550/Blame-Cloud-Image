@@ -2,15 +2,11 @@ package com.junjie.blamepicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.junjie.blamepicturebackend.model.dto.picture.PictureQueryRequest;
-import com.junjie.blamepicturebackend.model.dto.picture.PictureReviewRequest;
-import com.junjie.blamepicturebackend.model.dto.picture.PictureUploadByBatchRequest;
-import com.junjie.blamepicturebackend.model.dto.picture.PictureUploadRequest;
+import com.junjie.blamepicturebackend.model.dto.picture.*;
 import com.junjie.blamepicturebackend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.junjie.blamepicturebackend.model.entity.User;
 import com.junjie.blamepicturebackend.model.vo.PictureVO;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -100,4 +96,27 @@ public interface PictureService extends IService<Picture> {
      */
     void clearPictureFile(Picture oldPicture);
 
+    /**
+     * 校验空间图片的权限
+     *
+     * @param loginUser
+     * @param picture
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId
+     * @param loginUser
+     */
+    void deletePicture(long pictureId, User loginUser);
+
+   /**
+     * 编辑图片
+     *
+     * @param pictureEditRequest
+     * @param loginUser
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }
