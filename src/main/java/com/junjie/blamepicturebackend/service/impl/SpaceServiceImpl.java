@@ -12,13 +12,16 @@ import com.junjie.blamepicturebackend.exception.ThrowUtils;
 import com.junjie.blamepicturebackend.model.dto.space.SpaceAddRequest;
 import com.junjie.blamepicturebackend.model.dto.space.SpaceQueryRequest;
 import com.junjie.blamepicturebackend.model.entity.Space;
+import com.junjie.blamepicturebackend.model.entity.SpaceUser;
 import com.junjie.blamepicturebackend.model.entity.User;
 import com.junjie.blamepicturebackend.model.enums.SpaceLevelEnum;
+import com.junjie.blamepicturebackend.model.enums.SpaceRoleEnum;
 import com.junjie.blamepicturebackend.model.enums.SpaceTypeEnum;
 import com.junjie.blamepicturebackend.model.vo.SpaceVO;
 import com.junjie.blamepicturebackend.model.vo.UserVO;
 import com.junjie.blamepicturebackend.service.SpaceService;
 import com.junjie.blamepicturebackend.mapper.SpaceMapper;
+import com.junjie.blamepicturebackend.service.SpaceUserService;
 import com.junjie.blamepicturebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -46,6 +49,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private SpaceUserService spaceUserService;
+
+//    @Resource
+//    @Lazy
+//    private DynamicShardingManager dynamicShardingManager;
 
     /**
      * 创建空间
@@ -94,14 +104,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 boolean result = this.save(space);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "保存空间到数据库失败");
                 // 创建成功后，如果是团队空间，关联新增团队成员记录
-                /*if (SpaceTypeEnum.TEAM.getValue() == space.getSpaceType()) {
+                if (SpaceTypeEnum.TEAM.getValue() == space.getSpaceType()) {
                     SpaceUser spaceUser = new SpaceUser();
                     spaceUser.setSpaceId(space.getId());
                     spaceUser.setUserId(userId);
                     spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
                     result = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
-                }*/
+                }
 //                // 创建分表（仅对团队空间生效）为方便部署，暂时不使用
 //                dynamicShardingManager.createSpacePictureTable(space);
                 // 返回新写入的数据 id

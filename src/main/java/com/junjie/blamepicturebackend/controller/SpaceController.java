@@ -10,6 +10,7 @@ import com.junjie.blamepicturebackend.constant.UserConstant;
 import com.junjie.blamepicturebackend.exception.BusinessException;
 import com.junjie.blamepicturebackend.exception.ErrorCode;
 import com.junjie.blamepicturebackend.exception.ThrowUtils;
+import com.junjie.blamepicturebackend.manager.auth.SpaceUserAuthManager;
 import com.junjie.blamepicturebackend.model.dto.space.*;
 import com.junjie.blamepicturebackend.model.entity.Space;
 import com.junjie.blamepicturebackend.model.entity.User;
@@ -40,6 +41,9 @@ public class SpaceController {
     @Resource
     private SpaceService spaceService;
 
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
+
 
     @PostMapping("/add")
     public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
@@ -61,7 +65,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         // 仅本人或者管理员可删除
-//        spaceService.checkSpaceAuth(loginUser, oldSpace);
+        spaceService.checkSpaceAuth(loginUser, oldSpace);
         // 操作数据库
         boolean result = spaceService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -122,13 +126,12 @@ public class SpaceController {
         // 查询数据库
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-//        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
-//        User loginUser = userService.getLoginUser(request);
-//        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
-//        spaceVO.setPermissionList(permissionList);
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVO.setPermissionList(permissionList);
         // 获取封装类
-//        return ResultUtils.success(spaceVO);
-        return ResultUtils.success(spaceService.getSpaceVO(space,request));
+        return ResultUtils.success(spaceVO);
     }
 
     /**

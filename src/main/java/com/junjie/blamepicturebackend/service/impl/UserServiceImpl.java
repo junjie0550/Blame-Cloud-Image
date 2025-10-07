@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.junjie.blamepicturebackend.constant.UserConstant;
 import com.junjie.blamepicturebackend.exception.BusinessException;
 import com.junjie.blamepicturebackend.exception.ErrorCode;
+import com.junjie.blamepicturebackend.manager.auth.StpKit;
 import com.junjie.blamepicturebackend.model.dto.user.UserQueryRequest;
 import com.junjie.blamepicturebackend.model.entity.User;
 import com.junjie.blamepicturebackend.model.enums.UserRoleEnum;
@@ -102,7 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 2. 加密
         String encryptPassword = getEncryptPassword(userPassword);
-        // 查询用户是否存在
+        // 3. 查询用户是否存在
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
         queryWrapper.eq("userPassword", encryptPassword);
@@ -114,7 +115,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 4. 记录用户登录态到 Sa-token，便于空间鉴权时使用，注意保证该用户信息与 SpringSession 中的信息过期时间一致
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
+
     }
 
     /**
